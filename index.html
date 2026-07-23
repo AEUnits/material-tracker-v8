@@ -212,7 +212,7 @@
                         <th class="py-3 px-4">WO #</th>
                         <th class="py-3 px-4">Type</th>
                         <th class="py-3 px-4">Location</th>
-                        <th class="py-3 px-4">CU</th>
+                        <th class="py-3 px-4">ID</th>
                         <th class="py-3 px-4">Description</th>
                         <th class="py-3 px-4">Qty</th>
                         <th class="py-3 px-4">Action</th>
@@ -648,7 +648,7 @@
         const uniqueWOs = [...new Set(cart.map(i => i.wo))];
         const subject = `Material Request - WOs: ${uniqueWOs.join(', ')}`;
         let body = `MATERIAL REPORT\n\n`;
-        cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | CU: ${i.id} | Qty: ${i.qty}\n`);
+        cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | ID: ${i.id} | Qty: ${i.qty}\n`);
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
         // Cart resets after the list is sent - this is a point-in-time inventory check
