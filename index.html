@@ -482,13 +482,16 @@
         } else { paginationDiv.classList.add('hidden'); }
 
         const displayData = currentFilteredList.slice((currentPage-1)*itemsPerPage, currentPage*itemsPerPage);
+        const pageOffset = (currentPage-1)*itemsPerPage;
         const tbody = document.getElementById('materialTableBody');
         tbody.innerHTML = "";
 
         const locationOptions = LOCATIONS.map(loc => `<option value="${loc}">${loc}</option>`).join('');
 
-        displayData.forEach(item => {
-            const safeId = item.cu.replace(/[^a-zA-Z0-9-_]/g, ''); 
+        displayData.forEach((item, i) => {
+            const rowIndex = pageOffset + i;
+            const safeId = 'row' + rowIndex;
+            const matKey = `${item.cu}::${item.id}`;
             tbody.innerHTML += `
                 <tr class="hover:bg-gray-50 border-b">
                     <td class="py-3 px-4 align-top font-bold text-primary-blue">${escapeHtml(item.id)}</td>
@@ -502,9 +505,9 @@
                             <select id="type-${safeId}" class="p-2 border rounded text-sm w-24"><option value="" selected disabled>Type</option><option value="Issue">Issue</option><option value="Credit">Credit</option></select>
                             <select id="source-${safeId}" class="p-2 border rounded text-sm w-40"><option value="" selected disabled>Location</option>${locationOptions}</select>
                             <input type="number" min="1" value="1" id="qty-${safeId}" class="p-2 border rounded w-16 text-center text-sm">
-                            <button class="p-2 bg-primary-blue text-white font-bold rounded hover:bg-blue-700" onclick="addToCart('${item.cu}', '${safeId}')">Add</button>
+                            <button class="p-2 bg-primary-blue text-white font-bold rounded hover:bg-blue-700" onclick="addToCart(${rowIndex}, '${safeId}')">Add</button>
                         </div>
-                        <div id="preview-${safeId}" class="flex flex-wrap gap-2 mt-2">${generatePreviewHTML(item.cu)}</div>
+                        <div id="preview-${safeId}" class="flex flex-wrap gap-2 mt-2">${generatePreviewHTML(matKey, safeId)}</div>
                     </td>
                 </tr>
             `;
@@ -514,8 +517,8 @@
     window.goToPage = (num) => { currentPage = num; renderTable(); };
 
     // --- CART LOGIC ---
-    function addToCart(originalCu, safeId) {
-        const itemObj = materialDB.find(x => x.cu === originalCu);
+    function addToCart(rowIndex, safeId) {
+        const itemObj = currentFilteredList[rowIndex];
         const qtyRaw = document.getElementById(`qty-${safeId}`).value;
         const qty = parseInt(qtyRaw, 10);
         const wo = document.getElementById(`wo-${safeId}`).value.trim().toUpperCase();
@@ -540,32 +543,34 @@
         }
 
         registerWO(wo);
-        const existing = cart.findIndex(x => x.cu === originalCu && x.wo === wo && x.type === type && x.source === source);
+        const matKey = `${itemObj.cu}::${itemObj.id}`;
+        const existing = cart.findIndex(x => x.matKey === matKey && x.wo === wo && x.type === type && x.source === source);
         if (existing > -1) cart[existing].qty += qty;
-        else cart.push({ ...itemObj, transactionId: crypto.randomUUID(), qty, wo, type, source });
+        else cart.push({ ...itemObj, matKey, transactionId: crypto.randomUUID(), qty, wo, type, source });
 
-        document.getElementById(`preview-${safeId}`).innerHTML = generatePreviewHTML(originalCu);
+        document.getElementById(`preview-${safeId}`).innerHTML = generatePreviewHTML(matKey, safeId);
         updateCartCounter();
-        const btn = document.querySelector(`button[onclick*="addToCart('${originalCu}'"]`);
-        btn.innerText = "✓";
-        setTimeout(() => btn.innerText = "Add", 800);
+        const btn = document.querySelector(`button[onclick*="addToCart(${rowIndex},"]`);
+        if (btn) {
+            btn.innerText = "✓";
+            setTimeout(() => btn.innerText = "Add", 800);
+        }
     }
     window.addToCart = addToCart;
 
-    function generatePreviewHTML(mcu) {
-        return cart.filter(c => c.cu === mcu).map(item => `
+    function generatePreviewHTML(matKey, safeId) {
+        return cart.filter(c => c.matKey === matKey).map(item => `
             <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded border-l-4 ${item.type === 'Issue' ? 'border-primary-blue bg-blue-50' : 'border-danger-red bg-red-50'}">
                 <strong>${escapeHtml(item.wo)}</strong>: ${item.qty}
-                <span class="ml-2 cursor-pointer font-bold" onclick="removeFromPreview('${item.transactionId}', '${mcu}')">&times;</span>
+                <span class="ml-2 cursor-pointer font-bold" onclick="removeFromPreview('${item.transactionId}', '${matKey}', '${safeId}')">&times;</span>
             </span>`).join('');
     }
-    window.removeFromPreview = (tid, mcu) => {
+    window.removeFromPreview = (tid, matKey, safeId) => {
         const idx = cart.findIndex(x => x.transactionId === tid);
         if (idx > -1) {
             cart.splice(idx, 1);
-            const sid = mcu.replace(/[^a-zA-Z0-9-_]/g, '');
-            const el = document.getElementById(`preview-${sid}`);
-            if(el) el.innerHTML = generatePreviewHTML(mcu);
+            const el = document.getElementById(`preview-${safeId}`);
+            if(el) el.innerHTML = generatePreviewHTML(matKey, safeId);
             updateCartCounter();
         }
     };
