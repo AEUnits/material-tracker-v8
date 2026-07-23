@@ -327,6 +327,18 @@
         const aPriority = a.priority === 'P' ? 0 : 1;
         const bPriority = b.priority === 'P' ? 0 : 1;
         if (aPriority !== bPriority) return aPriority - bPriority;
+
+        // Wood poles (POLE-WD) are used far more often than concrete poles (POLE-CTE),
+        // so force WD to sort before CTE even though "C" would normally come before "W".
+        // Everything else, including ordering within the WD group and within the CTE
+        // group, still follows normal A-Z order.
+        const aIsWD = a.cu.startsWith('POLE-WD');
+        const bIsWD = b.cu.startsWith('POLE-WD');
+        const aIsCTE = a.cu.startsWith('POLE-CTE');
+        const bIsCTE = b.cu.startsWith('POLE-CTE');
+        if (aIsWD && bIsCTE) return -1;
+        if (aIsCTE && bIsWD) return 1;
+
         return a.cu.localeCompare(b.cu);
     }
 
