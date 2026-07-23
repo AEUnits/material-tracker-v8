@@ -323,6 +323,13 @@
             .replace(/'/g, '&#39;');
     }
 
+    function compareMaterials(a, b) {
+        const aPriority = a.priority === 'P' ? 0 : 1;
+        const bPriority = b.priority === 'P' ? 0 : 1;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        return a.cu.localeCompare(b.cu);
+    }
+
     // --- INITIALIZATION ---
     window.onload = () => {
         if (sessionStorage.getItem('isLoggedIn') === 'true') {
@@ -375,13 +382,14 @@
                         cu: cols[0].trim(),   // Column A - CU: the compatible-unit code, e.g. "ARR-ELBOW-10KV-F" (this is the actual unique key)
                         id: cols[1].trim(),   // Column B - ID: a numeric material id, can repeat across multiple CU codes
                         desc: cols[2] ? cols[2].trim() : 'No Description',
-                        category: cols[3] ? cols[3].trim() : 'Uncategorized'
+                        category: cols[3] ? cols[3].trim() : 'Uncategorized',
+                        priority: cols[4] ? cols[4].trim().toUpperCase() : ''   // Column E - "P" marks a most-used item to sort first
                     });
                 }
             }
 
-            // Sort by the value shown in the "CU" table column (the ID number)
-            newData.sort((a, b) => a.id.localeCompare(b.id));
+            // Priority ("P") items first, then alphabetical by CU within each group
+            newData.sort(compareMaterials);
 
             if (newData.length > 0) {
                  materialDB = newData;
@@ -456,7 +464,7 @@
         }
 
         // Always re-sort just in case
-        currentFilteredList = baseData.sort((a,b) => a.id.localeCompare(b.id));
+        currentFilteredList = baseData.sort(compareMaterials);
         currentPage = 1;
         renderTable();
     }
