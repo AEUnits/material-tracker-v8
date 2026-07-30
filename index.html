@@ -52,7 +52,7 @@
 <body class="bg-gray-100 p-4 sm:p-6 pb-20"> 
 
 <!-- Version badge - fixed top-left, shown on every page -->
-<div class="fixed top-1 left-1.5 z-[2000] text-[10px] font-semibold text-gray-400 select-none">v8</div>
+<div id="version-badge" class="fixed top-1 left-1.5 z-[2000] text-[10px] font-semibold text-gray-400 select-none"></div>
 
 <!-- Custom Modal Overlay -->
 <div id="custom-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-60 z-[1000] hidden justify-center items-center">
@@ -196,9 +196,14 @@
     <div id="view-review" class="hidden">
         <header class="flex justify-between items-center pb-4 mb-4 border-b-2 border-gray-200">
             <h1 class="text-2xl font-extrabold text-gray-800">Review & Send</h1>
-            <button class="px-4 py-2 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md" onclick="goBack()">
-                &larr; Back to Selection
-            </button>
+            <div class="flex items-center gap-2">
+                <button class="px-4 py-2 bg-danger-red text-white font-bold rounded-lg hover:bg-red-700 transition duration-150 shadow-md" onclick="confirmClearCart()">
+                    Clear List
+                </button>
+                <button class="px-4 py-2 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md" onclick="goBack()">
+                    &larr; Back to Selection
+                </button>
+            </div>
         </header>
 
         <div class="bg-gray-200 p-4 rounded-lg mb-6 border border-gray-300">
@@ -256,6 +261,7 @@
     
     const EMBEDDED_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBmb-80reVNE4qZ_OvQ3_USfQNJHsjnmFvHXE733_4ijrIlsSvR0Mz9Wl6cbXcBtbod98pJrN4HPyL/pub?output=csv";
     const APP_PASSCODE = "1945"; 
+    const APP_VERSION = "v8.1"; // Update this on every new version - shows in the corner badge and on every emailed report
 
     const LOCATIONS = [
         "Pike Sebring", "Pike Frostproof", "Pike Dundee",
@@ -344,6 +350,7 @@
 
     // --- INITIALIZATION ---
     window.onload = () => {
+        document.getElementById('version-badge').innerText = APP_VERSION;
         if (sessionStorage.getItem('isLoggedIn') === 'true') {
             unlockApp();
         }
@@ -519,7 +526,7 @@
                     <td class="py-3 px-4 align-top">
                         <div class="flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-2 items-start lg:items-center">
                             <div class="flex items-center w-32 lg:w-36">
-                                <input type="text" id="wo-${safeId}" class="p-2 border rounded-l w-full text-sm" placeholder="WO#" list="wo-history-list">
+                                <input type="text" id="wo-${safeId}" class="p-2 border rounded-l w-full text-sm" placeholder="WO#" list="wo-history-list" autocomplete="off">
                                 <button id="plus-${safeId}" class="p-2 border-y border-r rounded-r bg-gray-100 font-bold" onclick="quickAddFromRow('${safeId}')">+</button>
                             </div>
                             <select id="type-${safeId}" class="p-2 border rounded text-sm w-24"><option value="" selected disabled>Type</option><option value="Issue">Issue</option><option value="Credit">Credit</option></select>
@@ -630,6 +637,17 @@
     }
     window.confirmClearWOHistory = confirmClearWOHistory;
 
+    function confirmClearCart() {
+        showCustomConfirm("Clear the entire review list? This cannot be undone.", (confirmed) => {
+            if (confirmed) {
+                cart = [];
+                updateCartCounter();
+                goToToc();
+            }
+        });
+    }
+    window.confirmClearCart = confirmClearCart;
+
     // --- REVIEW & EXPORT ---
     function goToReview() {
         if (cart.length === 0) return showCustomAlert("Review list is empty.");
@@ -667,14 +685,9 @@
     function openEmailDraft() {
         const uniqueWOs = [...new Set(cart.map(i => i.wo))];
         const subject = `Material Request - WOs: ${uniqueWOs.join(', ')}`;
-        let body = `MATERIAL REPORT\n\n`;
+        let body = `MATERIAL REPORT ${APP_VERSION}\n\n`;
         cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | ID: ${i.id} | Qty: ${i.qty}\n`);
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-        // Cart resets after the list is sent - this is a point-in-time inventory check
-        cart = [];
-        updateCartCounter();
-        goToToc();
     }
     window.openEmailDraft = openEmailDraft;
 
