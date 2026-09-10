@@ -469,7 +469,7 @@
     const APP_PASSCODE = "1945"; 
     const ADMIN_PIN = "2026";
     let adminUnlocked = false;
-    const APP_VERSION = "v9.0.15"; // Update this on every new version - shows in the corner badge and on every emailed report
+    const APP_VERSION = "v9.0.16"; // Update this on every new version - shows in the corner badge and on every emailed report
 
     const LOCATIONS = [
         "Frostproof Pike Yard", "Dundee Pike Yard", "Sebring Pike Yard",
@@ -1075,7 +1075,7 @@
             body += `From ${numberToWord(uniqueSources.length)} different Locations (${formatLocationList(uniqueSources)})\n`;
         }
         body += `\n`;
-        cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | ID: ${i.id} | Qty: ${i.qty}\n`);
+        cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | Material ID: ${i.id} | Qty: ${i.qty}\n`);
 
         // If any location in this order is not a Jingoli yard (i.e. a Pike yard),
         // DEF Material goes in To instead of CC for that email.
