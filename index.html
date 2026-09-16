@@ -469,7 +469,7 @@
     const APP_PASSCODE = "1945"; 
     const ADMIN_PIN = "2026";
     let adminUnlocked = false;
-    const APP_VERSION = "v9.0.17"; // Update this on every new version - shows in the corner badge and on every emailed report
+    const APP_VERSION = "v9.0.17C"; // Material Tracker: no auto-filled To or CC at all. Poles Order unaffected. Part of the A/B/C variant set.
 
     const LOCATIONS = [
         "Frostproof Pike Yard", "Dundee Pike Yard", "Sebring Pike Yard",
@@ -1077,18 +1077,9 @@
         body += `\n`;
         cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | Material ID: ${i.id} | Qty: ${i.qty}\n`);
 
-        // To is always just DEF Material on this side, regardless of location.
-        const defMaterialAddr = MATERIAL_EMAIL_CC[0]; // '"DEF Material" <defmaterial@pike.com>'
-        const toSet = new Set([defMaterialAddr]);
-
-        const allRestricted = uniqueSources.length > 0 && uniqueSources.every(loc => RESTRICTED_CC_LOCATIONS.includes(loc));
-        const baseCC = allRestricted ? RESTRICTED_CC : MATERIAL_EMAIL_CC;
-        const ccList = baseCC.filter(e => !toSet.has(e));
-        const to = [...toSet].map(e => encodeURIComponent(e)).join(',');
-        const cc = ccList.map(e => encodeURIComponent(e)).join(',');
-
-        let mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        if (cc) mailtoUrl += `&cc=${cc}`;
+        // Version C: no auto-filled recipients at all - person sending it fills
+        // in To/CC themselves.
+        const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = mailtoUrl;
     }
     window.openEmailDraft = openEmailDraft;
