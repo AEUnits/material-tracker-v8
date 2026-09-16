@@ -469,7 +469,7 @@
     const APP_PASSCODE = "1945"; 
     const ADMIN_PIN = "2026";
     let adminUnlocked = false;
-    const APP_VERSION = "v9.0.17"; // Update this on every new version - shows in the corner badge and on every emailed report
+    const APP_VERSION = "v9.0.17A"; // Material Tracker: Jingoli yards get their specific contact in To, Pike yards get DEF Material. Poles Order unaffected. Part of the A/B/C variant set.
 
     const LOCATIONS = [
         "Frostproof Pike Yard", "Dundee Pike Yard", "Sebring Pike Yard",
@@ -1077,12 +1077,28 @@
         body += `\n`;
         cart.forEach(i => body += `WO: ${i.wo} | ${i.type} | Loc: ${i.source} | Material ID: ${i.id} | Qty: ${i.qty}\n`);
 
-        // To is always just DEF Material on this side, regardless of location.
+        // Version A: Pike yards -> DEF Material in To. Jingoli yards -> their
+        // own specific contact in To (per LOCATION_EMAILS). Same CC rules as
+        // the other variants.
         const defMaterialAddr = MATERIAL_EMAIL_CC[0]; // '"DEF Material" <defmaterial@pike.com>'
-        const toSet = new Set([defMaterialAddr]);
+        const hasNonJingoli = uniqueSources.some(loc => !loc.includes('Jingoli'));
+
+        const toSet = new Set();
+        if (hasNonJingoli) toSet.add(defMaterialAddr);
+
+        uniqueSources.forEach(loc => {
+            if (loc.includes('Jingoli')) {
+                const entry = LOCATION_EMAILS[loc];
+                if (entry && entry.to) {
+                    entry.to.split(';').map(e => e.trim()).filter(Boolean).forEach(e => toSet.add(e));
+                }
+            }
+        });
 
         const allRestricted = uniqueSources.length > 0 && uniqueSources.every(loc => RESTRICTED_CC_LOCATIONS.includes(loc));
-        const baseCC = allRestricted ? RESTRICTED_CC : MATERIAL_EMAIL_CC;
+        const baseCC = allRestricted
+            ? RESTRICTED_CC
+            : (hasNonJingoli ? MATERIAL_EMAIL_CC.filter(e => e !== defMaterialAddr) : MATERIAL_EMAIL_CC);
         const ccList = baseCC.filter(e => !toSet.has(e));
         const to = [...toSet].map(e => encodeURIComponent(e)).join(',');
         const cc = ccList.map(e => encodeURIComponent(e)).join(',');
